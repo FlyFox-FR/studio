@@ -59,7 +59,7 @@ export function ContactManager() {
       navigator.serviceWorker
         .register("/sw.js")
         .then((swReg) => {
-          console.log("Service Worker is registered", swReg);
+          console.log("Service Worker ist registriert", swReg);
           setNotificationPermission(Notification.permission);
           swReg.pushManager.getSubscription().then((subscription) => {
             if (subscription) {
@@ -68,7 +68,7 @@ export function ContactManager() {
           });
         })
         .catch((error) => {
-          console.error("Service Worker Error", error);
+          console.error("Service Worker Fehler", error);
         });
     }
   }, []);
@@ -97,8 +97,8 @@ export function ContactManager() {
   };
 
   const subscribeUserToPush = async () => {
-    const swRegistration = await navigator.serviceWorker.ready;
     try {
+      const swRegistration = await navigator.serviceWorker.ready;
       const applicationServerKey = urlBase64ToUint8Array(
         "BNo_3GfW-w4eJ3eED1pM8jYihS0iV4gP1kMh0iLGpn8F1bV7A1i-8o7GvL4gSfuwaX-oaqN-XwzJz4sXj8XJz5E"
       );
@@ -106,7 +106,7 @@ export function ContactManager() {
         userVisibleOnly: true,
         applicationServerKey,
       });
-      console.log("User is subscribed:", subscription);
+      console.log("Benutzer ist angemeldet:", subscription);
       setIsSubscribed(true);
       toast({
         title: "Benachrichtigungen aktiviert!",
@@ -114,12 +114,21 @@ export function ContactManager() {
       });
       // In a real app, you would send the subscription to your backend server.
     } catch (error) {
-      console.error("Failed to subscribe the user: ", error);
-      toast({
-        title: "Anmeldung für Benachrichtigungen fehlgeschlagen.",
-        description: "Bitte versuche es erneut.",
-        variant: "destructive",
-      });
+      console.error("Anmeldung für Push-Benachrichtigungen fehlgeschlagen: ", error);
+      setIsSubscribed(false);
+      if (Notification.permission === 'denied') {
+        toast({
+          title: "Anmeldung für Benachrichtigungen fehlgeschlagen.",
+          description: "Die Berechtigung wurde verweigert. Bitte in den Browsereinstellungen ändern.",
+          variant: "destructive",
+        });
+      } else {
+         toast({
+          title: "Anmeldung für Benachrichtigungen fehlgeschlagen.",
+          description: "Bitte versuche es erneut.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -162,6 +171,13 @@ export function ContactManager() {
       setEditingContact(null);
     }
   }, [isFormOpen]);
+  
+  React.useEffect(() => {
+    // Cleanup function to reset the contact to delete when the dialog is closed
+    if (!isDeleteDialogOpen) {
+      setContactToDeleteId(null);
+    }
+  }, [isDeleteDialogOpen]);
 
   const handleOpenForm = (contact: Contact | null = null) => {
     setEditingContact(contact);
@@ -181,7 +197,7 @@ export function ContactManager() {
       );
       toast({
         title: "Kontakt aktualisiert",
-        description: `${contactData.name}s Details wurden aktualisiert.`,
+        description: `Die Daten von ${contactData.name} wurden aktualisiert.`,
       });
     } else {
       contactToSave = { ...contactData, id: crypto.randomUUID() };
@@ -215,7 +231,6 @@ export function ContactManager() {
     }
 
     setIsDeleteDialogOpen(false);
-    setContactToDeleteId(null);
   };
 
   const handleExportData = async () => {
@@ -256,7 +271,7 @@ export function ContactManager() {
         }
 
         const contactsWithDateObjects: Contact[] = importedContacts.map(
-          (c: any) => ({ ...c, birthday: new Date(c.birthday) })
+          (c: any) => ({ ...c, birthday: new Date(c.birthday), id: c.id || crypto.randomUUID() })
         );
 
         await bulkAddContacts(contactsWithDateObjects);
@@ -352,7 +367,7 @@ export function ContactManager() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setContactToDeleteId(null)}>
+            <AlertDialogCancel>
               Abbrechen
             </AlertDialogCancel>
             <AlertDialogAction

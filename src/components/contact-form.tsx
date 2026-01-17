@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format, parse } from "date-fns";
-import { de } from "date-fns/locale/de";
+import { format, parse, isValid } from "date-fns";
+import { de } from "date-fns/locale";
 import { CalendarIcon, Trash2, Upload } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -75,10 +75,7 @@ export function ContactForm({
   });
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const [imagePreview, setImagePreview] = React.useState<string | null>(null);
-  const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
-  const [birthdayString, setBirthdayString] = React.useState("");
-
+  
   React.useEffect(() => {
     if (isOpen) {
       if (contact) {
@@ -88,10 +85,6 @@ export function ContactForm({
           reminders: contact.reminders,
           avatarUrl: contact.avatarUrl,
         });
-        setImagePreview(contact.avatarUrl || null);
-        setBirthdayString(
-          contact.birthday ? format(contact.birthday, "dd.MM.yyyy") : ""
-        );
       } else {
         form.reset({
           name: "",
@@ -99,8 +92,6 @@ export function ContactForm({
           reminders: [],
           avatarUrl: "",
         });
-        setImagePreview(null);
-        setBirthdayString("");
       }
     }
   }, [contact, form, isOpen]);
@@ -111,7 +102,6 @@ export function ContactForm({
       const reader = new FileReader();
       reader.onloadend = () => {
         const dataUrl = reader.result as string;
-        setImagePreview(dataUrl);
         form.setValue("avatarUrl", dataUrl, { shouldValidate: true });
       };
       reader.readAsDataURL(file);
@@ -119,7 +109,6 @@ export function ContactForm({
   };
   
   const handleRemoveImage = () => {
-    setImagePreview(null);
     form.setValue("avatarUrl", undefined);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -129,6 +118,9 @@ export function ContactForm({
   const onSubmit = (values: FormValues) => {
     onSave(values, contact?.id);
   };
+
+  const avatarUrl = form.watch("avatarUrl");
+  const name = form.watch("name");
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -149,14 +141,14 @@ export function ContactForm({
               <FormField
                 control={form.control}
                 name="avatarUrl"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <FormLabel>Profilbild</FormLabel>
                     <div className="flex items-center gap-4">
                       <Avatar className="h-20 w-20">
-                        <AvatarImage src={field.value ?? undefined} alt="Avatar" className="object-cover" />
+                        <AvatarImage src={avatarUrl ?? undefined} alt="Avatar" className="object-cover" />
                         <AvatarFallback className="text-3xl">
-                          {getInitials(form.watch("name") || " ")}
+                          {getInitials(name || " ")}
                         </AvatarFallback>
                       </Avatar>
                       <Input
@@ -174,7 +166,7 @@ export function ContactForm({
                           <Upload className="mr-2 h-4 w-4" />
                           Hochladen
                         </Button>
-                        {field.value && (
+                        {avatarUrl && (
                           <Button
                             type="button"
                             variant="ghost"
@@ -210,42 +202,24 @@ export function ContactForm({
                   <FormItem className="flex flex-col">
                     <FormLabel>Geburtstag</FormLabel>
                     <div className="flex items-center gap-2">
-                      <FormControl>
-                        <Input
-                          placeholder="dd.MM.yyyy"
-                          value={birthdayString}
-                          onChange={(e) => setBirthdayString(e.target.value)}
-                          onBlur={(e) => {
-                            try {
-                              const newDate = parse(
-                                e.target.value,
-                                "dd.MM.yyyy",
-                                new Date()
-                              );
-                              if (
-                                !isNaN(newDate.getTime()) &&
-                                e.target.value.length >= 8
-                              ) {
-                                field.onChange(newDate);
-                                setBirthdayString(format(newDate, "dd.MM.yyyy"));
-                              } else {
-                                field.onChange(undefined);
-                              }
-                            } catch {
-                              field.onChange(undefined);
-                            }
-                          }}
-                        />
-                      </FormControl>
-                      <Popover
-                        open={isCalendarOpen}
-                        onOpenChange={setIsCalendarOpen}
-                      >
+                       <Input
+                        placeholder="dd.MM.yyyy"
+                        value={field.value ? format(field.value, 'dd.MM.yyyy') : ''}
+                        onChange={(e) => {
+                          const date = parse(e.target.value, 'dd.MM.yyyy', new Date());
+                          if (isValid(date)) {
+                            field.onChange(date);
+                          } else {
+                            field.onChange(undefined);
+                          }
+                        }}
+                      />
+                      <Popover modal={false}>
                         <PopoverTrigger asChild>
                           <Button
                             variant={"outline"}
                             size="icon"
-                            className="w-10 flex-shrink-0"
+                            className={cn("w-10 flex-shrink-0", !field.value && "text-muted-foreground")}
                           >
                             <CalendarIcon className="h-4 w-4" />
                           </Button>
@@ -255,18 +229,11 @@ export function ContactForm({
                             mode="single"
                             locale={de}
                             selected={field.value}
-                            onSelect={(date) => {
-                              field.onChange(date);
-                              if (date) {
-                                setBirthdayString(format(date, "dd.MM.yyyy"));
-                              } else {
-                                setBirthdayString("");
-                              }
-                              setIsCalendarOpen(false);
-                            }}
+                            onSelect={field.onChange}
                             disabled={(date) =>
                               date > new Date() || date < new Date("1900-01-01")
                             }
+                            initialFocus
                             defaultMonth={field.value}
                           />
                         </PopoverContent>

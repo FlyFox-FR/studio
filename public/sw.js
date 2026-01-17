@@ -1,27 +1,40 @@
-// This file is intentionally left blank. 
-// It's needed to register the service worker for push notifications.
+// This is the service worker file for handling push notifications.
 
-self.addEventListener('push', function(event) {
+// Listen for push events
+self.addEventListener('push', function (event) {
   console.log('[Service Worker] Push Received.');
   
-  const pushData = event.data ? event.data.json() : {};
+  // Default text if the push message is empty
+  const notificationText = event.data ? event.data.text() : 'Standard-Benachrichtigungstext.';
 
-  const title = pushData.title || 'RememberWhen';
+  const title = 'RememberWhen';
   const options = {
-    body: pushData.body || 'Dies ist eine Test-Benachrichtigung.',
-    icon: 'icon.png',
-    badge: 'icon.png'
+    body: notificationText,
+    icon: 'icon.png', // This icon should be in the /public folder
+    badge: 'icon.png' // This icon should be in the /public folder
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
+// Listen for notification click events
 self.addEventListener('notificationclick', function(event) {
   console.log('[Service Worker] Notification click Received.');
 
+  // Close the notification
   event.notification.close();
 
+  // Open the app or focus the existing window
   event.waitUntil(
-    clients.openWindow('/')
+    clients.matchAll({ type: 'window' }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url === '/' && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('/');
+      }
+    })
   );
 });
