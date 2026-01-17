@@ -75,6 +75,7 @@ export function ContactForm({
   });
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [isCalendarOpen, setCalendarOpen] = React.useState(false);
   
   React.useEffect(() => {
     if (isOpen) {
@@ -206,15 +207,16 @@ export function ContactForm({
                         placeholder="dd.MM.yyyy"
                         value={field.value ? format(field.value, 'dd.MM.yyyy') : ''}
                         onChange={(e) => {
-                          const date = parse(e.target.value, 'dd.MM.yyyy', new Date());
-                          if (isValid(date)) {
-                            field.onChange(date);
-                          } else {
-                            field.onChange(undefined);
-                          }
+                          const dateString = e.target.value;
+                          const date = parse(dateString, 'dd.MM.yyyy', new Date());
+                           if (isValid(date)) {
+                             field.onChange(date);
+                           } else if (dateString === '') {
+                              field.onChange(undefined);
+                           }
                         }}
                       />
-                      <Popover modal={false}>
+                      <Popover open={isCalendarOpen} onOpenChange={setCalendarOpen}>
                         <PopoverTrigger asChild>
                           <Button
                             variant={"outline"}
@@ -229,7 +231,10 @@ export function ContactForm({
                             mode="single"
                             locale={de}
                             selected={field.value}
-                            onSelect={field.onChange}
+                            onSelect={(date) => {
+                              field.onChange(date);
+                              setCalendarOpen(false);
+                            }}
                             disabled={(date) =>
                               date > new Date() || date < new Date("1900-01-01")
                             }

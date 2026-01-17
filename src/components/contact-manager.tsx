@@ -60,9 +60,11 @@ export function ContactManager() {
         .register("/sw.js")
         .then((swReg) => {
           console.log("Service Worker ist registriert", swReg);
+          // Check for existing permission and subscription status
           setNotificationPermission(Notification.permission);
           swReg.pushManager.getSubscription().then((subscription) => {
             if (subscription) {
+              console.log("Bestehendes Abo gefunden.");
               setIsSubscribed(true);
             }
           });
@@ -82,15 +84,24 @@ export function ContactManager() {
       return;
     }
 
-    const permission = await Notification.requestPermission();
-    setNotificationPermission(permission);
+    try {
+      const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
 
-    if (permission === "granted") {
-      subscribeUserToPush();
-    } else {
+      if (permission === "granted") {
+        await subscribeUserToPush();
+      } else {
+        toast({
+          title: "Benachrichtigungs-Berechtigung verweigert.",
+          description: "Du wirst keine Geburtstagserinnerungen erhalten.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Fehler bei der Anforderung der Berechtigung:", error);
       toast({
-        title: "Benachrichtigungs-Berechtigung verweigert.",
-        description: "Du wirst keine Geburtstagserinnerungen erhalten.",
+        title: "Fehler bei der Berechtigungsanfrage",
+        description: "Bitte versuchen Sie es erneut.",
         variant: "destructive",
       });
     }
@@ -115,7 +126,9 @@ export function ContactManager() {
       // In a real app, you would send the subscription to your backend server.
     } catch (error) {
       console.error("Anmeldung für Push-Benachrichtigungen fehlgeschlagen: ", error);
-      setIsSubscribed(false);
+      // Reset subscription status on failure
+      setIsSubscribed(false); 
+      
       if (Notification.permission === 'denied') {
         toast({
           title: "Anmeldung für Benachrichtigungen fehlgeschlagen.",
@@ -142,12 +155,12 @@ export function ContactManager() {
       return;
     }
 
-    // This is a client-side notification for testing purposes.
-    // A real push notification must be triggered from a server.
     navigator.serviceWorker.ready.then((registration) => {
-      registration.showNotification("Test-Benachrichtigung", {
-        body: "Dies ist eine Test-Benachrichtigung von RememberWhen!",
-        icon: "icon.png",
+      registration.showNotification("Test-Benachrichtigung 🎂", {
+        body: "Wenn du das siehst, funktionieren deine Benachrichtigungen!",
+        icon: "/icon.png", // Ensure the icon path is correct
+        badge: "/badge.png", // Optional: for Android
+        tag: "test-notification", // Prevents multiple test notifications from stacking
       });
     });
 
@@ -201,7 +214,7 @@ export function ContactManager() {
       });
     } else {
       contactToSave = { ...contactData, id: crypto.randomUUID() };
-      setContacts((prev) => [...prev, contactToSave]);
+      setContacts((prev) => [...prev, contactToSave].sort((a, b) => a.name.localeCompare(b.name)));
       toast({
         title: "Kontakt hinzugefügt",
         description: `${contactData.name} wurde zu deiner Liste hinzugefügt.`,
@@ -226,7 +239,6 @@ export function ContactManager() {
       toast({
         title: "Kontakt gelöscht",
         description: `${contactToDelete.name} wurde entfernt.`,
-        variant: "destructive",
       });
     }
 
@@ -241,7 +253,7 @@ export function ContactManager() {
       const url = URL.createObjectURL(dataBlob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "remember-when-backup.json";
+      link.download = `remember-when-backup-${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -264,21 +276,21 @@ export function ContactManager() {
         if (typeof text !== "string") {
           throw new Error("Datei ist nicht lesbar");
         }
-        const importedContacts = JSON.parse(text);
+        const importedContacts = JSON.parse(text) as Omit<Contact, 'birthday'> & { birthday: string }[];
 
         if (!Array.isArray(importedContacts)) {
           throw new Error("Ungültiges Backup-Dateiformat");
         }
 
         const contactsWithDateObjects: Contact[] = importedContacts.map(
-          (c: any) => ({ ...c, birthday: new Date(c.birthday), id: c.id || crypto.randomUUID() })
+          (c) => ({ ...c, birthday: new Date(c.birthday), id: c.id || crypto.randomUUID() })
         );
 
         await bulkAddContacts(contactsWithDateObjects);
         const allDbContacts = await getAllContacts();
-        setContacts(allDbContacts);
+        setContacts(allDbContacts.sort((a, b) => a.name.localeCompare(b.name)));
         
-        toast({ title: "Daten erfolgreich importiert!" });
+        toast({ title: "Daten erfolgreich importiert!", description: `${contactsWithDateObjects.length} Kontakte wurden hinzugefügt/aktualisiert.` });
         setIsSettingsOpen(false);
       } catch (error) {
         console.error("Fehler beim Importieren der Daten", error);
@@ -290,6 +302,7 @@ export function ContactManager() {
       }
     };
     reader.readAsText(file);
+    // Reset file input to allow importing the same file again
     if (event.target) {
         event.target.value = '';
     }
@@ -328,7 +341,7 @@ export function ContactManager() {
           <div className="mt-8">
             <div className="flex items-center gap-2 mb-4">
               <Users className="h-6 w-6 text-foreground" />
-              <h2 className="font-headline text-2xl font-bold">Kontakte</h2>
+              <h2 className="font-headline text-2xl font-bold">Deine Kontakte</h2>
             </div>
             <ContactList
               contacts={contacts}

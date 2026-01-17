@@ -48,7 +48,7 @@ export function SettingsSheet({
     if (isSubscribed) {
       return (
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <p className="text-sm font-medium text-green-600">
+          <p className="text-sm font-medium text-green-600 dark:text-green-400">
             Benachrichtigungen sind aktiviert!
           </p>
           <Button variant="outline" onClick={handleTestNotification}>
@@ -60,8 +60,8 @@ export function SettingsSheet({
     }
 
     return (
-      <Button onClick={handleRequestNotificationPermission}>
-        Benachrichtigungen aktivieren
+      <Button onClick={handleRequestNotificationPermission} disabled={notificationPermission === 'granted'}>
+        {notificationPermission === 'granted' ? 'Melde an...' : 'Benachrichtigungen aktivieren'}
       </Button>
     );
   };
@@ -92,7 +92,7 @@ export function SettingsSheet({
             <h3 className="text-lg font-semibold">Benachrichtigungen</h3>
           </div>
           <p className="text-sm text-muted-foreground mb-4">
-            Aktiviere Push-Benachrichtigungen, um Geburtstagserinnerungen zu erhalten, auch wenn die App auf Android geschlossen ist.
+            Aktiviere Push-Benachrichtigungen, um Geburtstagserinnerungen zu erhalten. Dies funktioniert am besten auf Android.
           </p>
           {renderNotificationUI()}
         </div>
