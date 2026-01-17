@@ -3,6 +3,7 @@
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, parse } from "date-fns";
+import { de } from "date-fns/locale/de";
 import { CalendarIcon, Trash2, Upload } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -252,6 +253,7 @@ export function ContactForm({
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
                             mode="single"
+                            locale={de}
                             selected={field.value}
                             onSelect={(date) => {
                               field.onChange(date);
@@ -265,7 +267,6 @@ export function ContactForm({
                             disabled={(date) =>
                               date > new Date() || date < new Date("1900-01-01")
                             }
-                            initialFocus
                             defaultMonth={field.value}
                           />
                         </PopoverContent>

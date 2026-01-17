@@ -2,19 +2,27 @@
 
 import * as React from "react";
 import { Plus, Settings, Users } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import type { Contact } from "@/lib/types";
-import { initialContacts } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
 import { ContactForm } from "@/components/contact-form";
 import { ContactList } from "@/components/contact-list";
 import { UpcomingReminders } from "@/components/upcoming-reminders";
 import { SettingsSheet } from "@/components/settings-sheet";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   getAllContacts,
   saveContact,
   deleteContact,
-  clearContacts,
   bulkAddContacts,
 } from "@/lib/db";
 
@@ -41,6 +49,10 @@ export function ContactManager() {
     React.useState<NotificationPermission>("default");
   const [isSubscribed, setIsSubscribed] = React.useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+  const [contactToDeleteId, setContactToDeleteId] = React.useState<string | null>(
+    null
+  );
 
   React.useEffect(() => {
     if ("serviceWorker" in navigator && "PushManager" in window) {
@@ -124,8 +136,8 @@ export function ContactManager() {
     // This is a client-side notification for testing purposes.
     // A real push notification must be triggered from a server.
     navigator.serviceWorker.ready.then((registration) => {
-      registration.showNotification("Test Notification", {
-        body: "This is a test notification from RememberWhen!",
+      registration.showNotification("Test-Benachrichtigung", {
+        body: "Dies ist eine Test-Benachrichtigung von RememberWhen!",
         icon: "icon.png",
       });
     });
@@ -139,12 +151,7 @@ export function ContactManager() {
 
   React.useEffect(() => {
     const loadContacts = async () => {
-      let dbContacts = await getAllContacts();
-      if (dbContacts.length === 0) {
-        // If DB is empty, populate with initial data and save to DB
-        await Promise.all(initialContacts.map((c) => saveContact(c)));
-        dbContacts = await getAllContacts();
-      }
+      const dbContacts = await getAllContacts();
       setContacts(dbContacts);
     };
     loadContacts();
@@ -187,17 +194,27 @@ export function ContactManager() {
     handleCloseForm();
   };
 
-  const handleDeleteContact = async (id: string) => {
-    const contactToDelete = contacts.find((c) => c.id === id);
+  const promptDeleteContact = (id: string) => {
+    setContactToDeleteId(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteContact = async () => {
+    if (!contactToDeleteId) return;
+
+    const contactToDelete = contacts.find((c) => c.id === contactToDeleteId);
     if (contactToDelete) {
-      setContacts(contacts.filter((c) => c.id !== id));
-      await deleteContact(id);
+      setContacts(contacts.filter((c) => c.id !== contactToDeleteId));
+      await deleteContact(contactToDeleteId);
       toast({
         title: "Kontakt gelöscht",
         description: `${contactToDelete.name} wurde entfernt.`,
         variant: "destructive",
       });
     }
+
+    setIsDeleteDialogOpen(false);
+    setContactToDeleteId(null);
   };
 
   const handleExportData = async () => {
@@ -208,7 +225,7 @@ export function ContactManager() {
       const url = URL.createObjectURL(dataBlob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "erinnerungshelfer-backup.json";
+      link.download = "remember-when-backup.json";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -237,7 +254,6 @@ export function ContactManager() {
           throw new Error("Ungültiges Backup-Dateiformat");
         }
 
-        // We need to convert date strings back to Date objects
         const contactsWithDateObjects: Contact[] = importedContacts.map(
           (c: any) => ({ ...c, birthday: new Date(c.birthday) })
         );
@@ -258,11 +274,12 @@ export function ContactManager() {
       }
     };
     reader.readAsText(file);
-    // Reset file input
     if (event.target) {
         event.target.value = '';
     }
   };
+
+  const contactAboutToBeDeleted = contacts.find(c => c.id === contactToDeleteId);
 
   return (
     <>
@@ -300,7 +317,7 @@ export function ContactManager() {
             <ContactList
               contacts={contacts}
               onEdit={handleOpenForm}
-              onDelete={handleDeleteContact}
+              onDelete={promptDeleteContact}
             />
           </div>
         </div>
@@ -322,6 +339,30 @@ export function ContactManager() {
         handleExportData={handleExportData}
         handleImportData={handleImportData}
       />
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sind Sie sicher?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {contactAboutToBeDeleted
+                ? `Möchten Sie den Kontakt "${contactAboutToBeDeleted.name}" wirklich löschen?`
+                : "Möchten Sie diesen Kontakt wirklich löschen?"}{" "}
+              Diese Aktion kann nicht rückgängig gemacht werden.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setContactToDeleteId(null)}>
+              Abbrechen
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteContact}
+              className={buttonVariants({ variant: "destructive" })}
+            >
+              Löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
