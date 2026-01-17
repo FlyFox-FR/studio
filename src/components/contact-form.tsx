@@ -40,9 +40,9 @@ import {
 } from "@/components/ui/popover";
 
 const formSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters."),
+  name: z.string().min(2, "Der Name muss mindestens 2 Zeichen lang sein."),
   birthday: z.date({
-    required_error: "A date of birth is required.",
+    required_error: "Ein Geburtsdatum ist erforderlich.",
   }),
   reminders: z.array(z.string()).optional(),
   avatarUrl: z.string().optional(),
@@ -134,12 +134,12 @@ export function ContactForm({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {contact ? "Edit Contact" : "Add New Contact"}
+            {contact ? "Kontakt bearbeiten" : "Neuen Kontakt hinzufügen"}
           </DialogTitle>
           <DialogDescription>
             {contact
-              ? "Make changes to your contact's details."
-              : "Add a new person to your reminder list."}
+              ? "Ändere die Details deines Kontakts."
+              : "Füge eine neue Person zu deiner Erinnerungsliste hinzu."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -150,7 +150,7 @@ export function ContactForm({
                 name="avatarUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Profile Picture</FormLabel>
+                    <FormLabel>Profilbild</FormLabel>
                     <div className="flex items-center gap-4">
                       <Avatar className="h-20 w-20">
                         <AvatarImage src={field.value ?? undefined} alt="Avatar" className="object-cover" />
@@ -171,7 +171,7 @@ export function ContactForm({
                           onClick={() => fileInputRef.current?.click()}
                         >
                           <Upload className="mr-2 h-4 w-4" />
-                          Upload
+                          Hochladen
                         </Button>
                         {field.value && (
                           <Button
@@ -181,7 +181,7 @@ export function ContactForm({
                             onClick={handleRemoveImage}
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
-                            Remove
+                            Entfernen
                           </Button>
                         )}
                       </div>
@@ -196,7 +196,7 @@ export function ContactForm({
                   <FormItem>
                     <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Jane Doe" {...field} />
+                      <Input placeholder="z.B. Max Mustermann" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -207,7 +207,7 @@ export function ContactForm({
                 name="birthday"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>Birthday</FormLabel>
+                    <FormLabel>Geburtstag</FormLabel>
                     <div className="flex items-center gap-2">
                       <FormControl>
                         <Input
@@ -281,9 +281,9 @@ export function ContactForm({
                 render={() => (
                   <FormItem>
                     <div className="mb-4">
-                      <FormLabel>Reminders</FormLabel>
+                      <FormLabel>Erinnerungen</FormLabel>
                       <FormDescription>
-                        Select when you want to be reminded.
+                        Wähle aus, wann du erinnert werden möchtest.
                       </FormDescription>
                     </div>
                     <div className="space-y-2">
@@ -327,7 +327,7 @@ export function ContactForm({
             </div>
             <DialogFooter>
               <Button type="submit">
-                {contact ? "Save Changes" : "Add Contact"}
+                {contact ? "Änderungen speichern" : "Kontakt hinzufügen"}
               </Button>
             </DialogFooter>
           </form>

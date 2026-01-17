@@ -64,7 +64,7 @@ export function ContactManager() {
   const handleRequestNotificationPermission = async () => {
     if (!("Notification" in window)) {
       toast({
-        title: "This browser does not support desktop notification",
+        title: "Dieser Browser unterstützt keine Desktop-Benachrichtigungen",
         variant: "destructive",
       });
       return;
@@ -77,8 +77,8 @@ export function ContactManager() {
       subscribeUserToPush();
     } else {
       toast({
-        title: "Notification permission denied.",
-        description: "You won't receive birthday reminders.",
+        title: "Benachrichtigungs-Berechtigung verweigert.",
+        description: "Du wirst keine Geburtstagserinnerungen erhalten.",
         variant: "destructive",
       });
     }
@@ -97,15 +97,15 @@ export function ContactManager() {
       console.log("User is subscribed:", subscription);
       setIsSubscribed(true);
       toast({
-        title: "Notifications enabled!",
-        description: "You're all set to receive reminders.",
+        title: "Benachrichtigungen aktiviert!",
+        description: "Du bist bereit, Erinnerungen zu erhalten.",
       });
       // In a real app, you would send the subscription to your backend server.
     } catch (error) {
       console.error("Failed to subscribe the user: ", error);
       toast({
-        title: "Couldn't subscribe to notifications.",
-        description: "Please try again.",
+        title: "Anmeldung für Benachrichtigungen fehlgeschlagen.",
+        description: "Bitte versuche es erneut.",
         variant: "destructive",
       });
     }
@@ -114,8 +114,8 @@ export function ContactManager() {
   const handleTestNotification = () => {
     if (!isSubscribed) {
       toast({
-        title: "Not Subscribed",
-        description: "Please enable notifications first.",
+        title: "Nicht angemeldet",
+        description: "Bitte aktiviere zuerst die Benachrichtigungen.",
         variant: "destructive",
       });
       return;
@@ -131,9 +131,9 @@ export function ContactManager() {
     });
 
     toast({
-      title: "Test notification sent",
+      title: "Test-Benachrichtigung gesendet",
       description:
-        "You should see a notification shortly. If not, check your browser and OS settings.",
+        "Du solltest in Kürze eine Benachrichtigung sehen. Wenn nicht, überprüfe deine Browser- und Betriebssystem-Einstellungen.",
     });
   };
 
@@ -172,15 +172,15 @@ export function ContactManager() {
         contacts.map((c) => (c.id === id ? contactToSave : c))
       );
       toast({
-        title: "Contact Updated",
-        description: `${contactData.name}'s details have been updated.`,
+        title: "Kontakt aktualisiert",
+        description: `${contactData.name}s Details wurden aktualisiert.`,
       });
     } else {
       contactToSave = { ...contactData, id: crypto.randomUUID() };
       setContacts((prev) => [...prev, contactToSave]);
       toast({
-        title: "Contact Added",
-        description: `${contactData.name} has been added to your list.`,
+        title: "Kontakt hinzugefügt",
+        description: `${contactData.name} wurde zu deiner Liste hinzugefügt.`,
       });
     }
     await saveContact(contactToSave);
@@ -193,8 +193,8 @@ export function ContactManager() {
       setContacts(contacts.filter((c) => c.id !== id));
       await deleteContact(id);
       toast({
-        title: "Contact Deleted",
-        description: `${contactToDelete.name} has been removed.`,
+        title: "Kontakt gelöscht",
+        description: `${contactToDelete.name} wurde entfernt.`,
         variant: "destructive",
       });
     }
@@ -208,15 +208,15 @@ export function ContactManager() {
       const url = URL.createObjectURL(dataBlob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "remember-when-backup.json";
+      link.download = "erinnerungshelfer-backup.json";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      toast({ title: "Data exported successfully!" });
+      toast({ title: "Daten erfolgreich exportiert!" });
     } catch (error) {
-      console.error("Failed to export data", error);
-      toast({ title: "Export failed", variant: "destructive" });
+      console.error("Fehler beim Exportieren der Daten", error);
+      toast({ title: "Export fehlgeschlagen", variant: "destructive" });
     }
   };
 
@@ -229,12 +229,12 @@ export function ContactManager() {
       try {
         const text = e.target?.result;
         if (typeof text !== "string") {
-          throw new Error("File is not readable");
+          throw new Error("Datei ist nicht lesbar");
         }
         const importedContacts = JSON.parse(text);
 
         if (!Array.isArray(importedContacts)) {
-          throw new Error("Invalid backup file format");
+          throw new Error("Ungültiges Backup-Dateiformat");
         }
 
         // We need to convert date strings back to Date objects
@@ -242,16 +242,17 @@ export function ContactManager() {
           (c: any) => ({ ...c, birthday: new Date(c.birthday) })
         );
 
-        await clearContacts();
         await bulkAddContacts(contactsWithDateObjects);
-        setContacts(contactsWithDateObjects);
-        toast({ title: "Data imported successfully!" });
+        const allDbContacts = await getAllContacts();
+        setContacts(allDbContacts);
+        
+        toast({ title: "Daten erfolgreich importiert!" });
         setIsSettingsOpen(false);
       } catch (error) {
-        console.error("Failed to import data", error);
+        console.error("Fehler beim Importieren der Daten", error);
         toast({
-          title: "Import failed",
-          description: "Please check the file format.",
+          title: "Import fehlgeschlagen",
+          description: "Bitte überprüfen Sie das Dateiformat.",
           variant: "destructive",
         });
       }
@@ -273,7 +274,7 @@ export function ContactManager() {
           <div className="flex items-center gap-2">
             <Button onClick={() => handleOpenForm()}>
               <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline sm:ml-2">Add Contact</span>
+              <span className="hidden sm:inline sm:ml-2">Kontakt hinzufügen</span>
             </Button>
             <Button
               variant="ghost"
@@ -281,7 +282,7 @@ export function ContactManager() {
               onClick={() => setIsSettingsOpen(true)}
             >
               <Settings className="h-5 w-5" />
-              <span className="sr-only">Settings</span>
+              <span className="sr-only">Einstellungen</span>
             </Button>
           </div>
         </div>
@@ -294,7 +295,7 @@ export function ContactManager() {
           <div className="mt-8">
             <div className="flex items-center gap-2 mb-4">
               <Users className="h-6 w-6 text-foreground" />
-              <h2 className="font-headline text-2xl font-bold">Contacts</h2>
+              <h2 className="font-headline text-2xl font-bold">Kontakte</h2>
             </div>
             <ContactList
               contacts={contacts}

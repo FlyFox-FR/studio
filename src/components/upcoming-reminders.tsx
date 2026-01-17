@@ -8,6 +8,7 @@ import {
   isTomorrow,
   setYear,
 } from "date-fns";
+import { de } from "date-fns/locale";
 import { Cake, CalendarClock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -39,9 +40,9 @@ const getUpcomingBirthdays = (
 };
 
 function formatUpcomingDate(date: Date): string {
-  if (isToday(date)) return "Today!";
-  if (isTomorrow(date)) return "Tomorrow";
-  return `on ${format(date, "MMMM d")}`;
+  if (isToday(date)) return "Heute!";
+  if (isTomorrow(date)) return "Morgen";
+  return `am ${format(date, "d. MMMM", { locale: de })}`;
 }
 
 export function UpcomingReminders({ contacts }: { contacts: Contact[] }) {
@@ -55,7 +56,7 @@ export function UpcomingReminders({ contacts }: { contacts: Contact[] }) {
     <div className="mb-8">
       <div className="flex items-center gap-2 mb-4">
         <CalendarClock className="h-6 w-6 text-foreground" />
-        <h2 className="font-headline text-2xl font-bold">Upcoming Birthdays</h2>
+        <h2 className="font-headline text-2xl font-bold">Anstehende Geburtstage</h2>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {upcoming.map((contact) => (
@@ -73,7 +74,7 @@ export function UpcomingReminders({ contacts }: { contacts: Contact[] }) {
               <div className="flex items-center text-sm text-muted-foreground">
                 <Cake className="mr-2 h-4 w-4" />
                 <span>
-                  Turns {contact.nextBirthday.getFullYear() - contact.birthday.getFullYear()}{" "}
+                  Wird {contact.nextBirthday.getFullYear() - contact.birthday.getFullYear()}{" "}
                   <span className="font-semibold text-foreground">
                     {formatUpcomingDate(contact.nextBirthday)}
                   </span>

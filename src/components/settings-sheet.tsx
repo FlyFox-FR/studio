@@ -39,8 +39,7 @@ export function SettingsSheet({
     if (notificationPermission === "denied") {
       return (
         <p className="text-sm text-destructive">
-          Notifications are blocked. Please enable them in your browser
-          settings.
+          Benachrichtigungen sind blockiert. Bitte aktiviere sie in deinen Browsereinstellungen.
         </p>
       );
     }
@@ -49,11 +48,11 @@ export function SettingsSheet({
       return (
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <p className="text-sm font-medium text-green-600">
-            Notifications are enabled!
+            Benachrichtigungen sind aktiviert!
           </p>
           <Button variant="outline" onClick={handleTestNotification}>
             <TestTubeDiagonal className="mr-2 h-4 w-4" />
-            Send Test Notification
+            Test-Benachrichtigung senden
           </Button>
         </div>
       );
@@ -61,7 +60,7 @@ export function SettingsSheet({
 
     return (
       <Button onClick={handleRequestNotificationPermission}>
-        Enable Notifications
+        Benachrichtigungen aktivieren
       </Button>
     );
   };
@@ -70,19 +69,18 @@ export function SettingsSheet({
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent>
         <SheetHeader>
-          <SheetTitle>Settings</SheetTitle>
+          <SheetTitle>Einstellungen</SheetTitle>
           <SheetDescription>
-            Manage your application settings here.
+            Verwalte hier deine Anwendungseinstellungen.
           </SheetDescription>
         </SheetHeader>
         <div className="py-4">
           <div className="flex items-center gap-2 mb-2">
             <Bell className="h-5 w-5" />
-            <h3 className="text-lg font-semibold">Notifications</h3>
+            <h3 className="text-lg font-semibold">Benachrichtigungen</h3>
           </div>
           <p className="text-sm text-muted-foreground mb-4">
-            Enable push notifications to get birthday reminders, even when the
-            app is closed on Android.
+            Aktiviere Push-Benachrichtigungen, um Geburtstagserinnerungen zu erhalten, auch wenn die App auf Android geschlossen ist.
           </p>
           {renderNotificationUI()}
         </div>
@@ -90,22 +88,22 @@ export function SettingsSheet({
         <div className="py-4">
           <div className="flex items-center gap-2 mb-2">
             <Database className="h-5 w-5" />
-            <h3 className="text-lg font-semibold">Data Backup</h3>
+            <h3 className="text-lg font-semibold">Datensicherung</h3>
           </div>
           <p className="text-sm text-muted-foreground mb-4">
-            Export your contacts to a JSON file or import them from a backup.
+            Exportiere deine Kontakte als JSON-Datei oder importiere sie aus einem Backup.
           </p>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleExportData}>
               <Download className="mr-2 h-4 w-4" />
-              Export
+              Exportieren
             </Button>
             <Button
               variant="outline"
               onClick={() => importInputRef.current?.click()}
             >
               <Upload className="mr-2 h-4 w-4" />
-              Import
+              Importieren
             </Button>
             <input
               type="file"

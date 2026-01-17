@@ -59,11 +59,11 @@ export function ContactCard({
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={onEdit}>
               <Edit className="mr-2 h-4 w-4" />
-              <span>Edit</span>
+              <span>Bearbeiten</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
               <Trash2 className="mr-2 h-4 w-4" />
-              <span>Delete</span>
+              <span>Löschen</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -72,7 +72,7 @@ export function ContactCard({
         {contact.reminders.length > 0 && (
           <div>
             <p className="mb-2 text-sm font-medium text-muted-foreground">
-              Reminders
+              Erinnerungen
             </p>
             <div className="flex flex-wrap gap-2">
               {contact.reminders.map((reminder) => (

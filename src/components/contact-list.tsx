@@ -13,9 +13,9 @@ export function ContactList({ contacts, onEdit, onDelete }: ContactListProps) {
   if (contacts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-card p-12 text-center">
-        <h3 className="text-xl font-medium">No Contacts Yet</h3>
+        <h3 className="text-xl font-medium">Noch keine Kontakte</h3>
         <p className="mt-2 text-sm text-muted-foreground">
-          Click "Add Contact" to get started.
+          Klicke auf "Kontakt hinzufügen", um zu starten.
         </p>
       </div>
     );
