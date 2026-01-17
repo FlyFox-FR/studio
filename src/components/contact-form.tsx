@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { CalendarIcon, Trash2, Upload } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -76,6 +76,7 @@ export function ContactForm({
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
+  const [birthdayString, setBirthdayString] = React.useState("");
 
   React.useEffect(() => {
     if (isOpen) {
@@ -87,6 +88,9 @@ export function ContactForm({
           avatarUrl: contact.avatarUrl,
         });
         setImagePreview(contact.avatarUrl || null);
+        setBirthdayString(
+          contact.birthday ? format(contact.birthday, "dd.MM.yyyy") : ""
+        );
       } else {
         form.reset({
           name: "",
@@ -95,6 +99,7 @@ export function ContactForm({
           avatarUrl: "",
         });
         setImagePreview(null);
+        setBirthdayString("");
       }
     }
   }, [contact, form, isOpen]);
@@ -203,40 +208,69 @@ export function ContactForm({
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Birthday</FormLabel>
-                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
+                    <div className="flex items-center gap-2">
+                      <FormControl>
+                        <Input
+                          placeholder="dd.MM.yyyy"
+                          value={birthdayString}
+                          onChange={(e) => setBirthdayString(e.target.value)}
+                          onBlur={(e) => {
+                            try {
+                              const newDate = parse(
+                                e.target.value,
+                                "dd.MM.yyyy",
+                                new Date()
+                              );
+                              if (
+                                !isNaN(newDate.getTime()) &&
+                                e.target.value.length >= 8
+                              ) {
+                                field.onChange(newDate);
+                                setBirthdayString(format(newDate, "dd.MM.yyyy"));
+                              } else {
+                                field.onChange(undefined);
+                              }
+                            } catch {
+                              field.onChange(undefined);
+                            }
+                          }}
+                        />
+                      </FormControl>
+                      <Popover
+                        open={isCalendarOpen}
+                        onOpenChange={setIsCalendarOpen}
+                      >
+                        <PopoverTrigger asChild>
                           <Button
                             variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
+                            size="icon"
+                            className="w-10 flex-shrink-0"
                           >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            <CalendarIcon className="h-4 w-4" />
                           </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={(date) => {
-                            field.onChange(date);
-                            setIsCalendarOpen(false);
-                          }}
-                          disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={(date) => {
+                              field.onChange(date);
+                              if (date) {
+                                setBirthdayString(format(date, "dd.MM.yyyy"));
+                              } else {
+                                setBirthdayString("");
+                              }
+                              setIsCalendarOpen(false);
+                            }}
+                            disabled={(date) =>
+                              date > new Date() || date < new Date("1900-01-01")
+                            }
+                            initialFocus
+                            defaultMonth={field.value}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
