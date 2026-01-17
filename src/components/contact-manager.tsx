@@ -157,14 +157,15 @@ export function ContactManager() {
     loadContacts();
   }, []);
 
+  React.useEffect(() => {
+    if (!isFormOpen) {
+      setEditingContact(null);
+    }
+  }, [isFormOpen]);
+
   const handleOpenForm = (contact: Contact | null = null) => {
     setEditingContact(contact);
     setIsFormOpen(true);
-  };
-
-  const handleCloseForm = () => {
-    setIsFormOpen(false);
-    setEditingContact(null);
   };
 
   const handleSaveContact = async (
@@ -191,7 +192,7 @@ export function ContactManager() {
       });
     }
     await saveContact(contactToSave);
-    handleCloseForm();
+    setIsFormOpen(false);
   };
 
   const promptDeleteContact = (id: string) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Bell, TestTubeDiagonal, Download, Upload, Database } from "lucide-react";
+import { Bell, TestTubeDiagonal, Download, Upload, Database, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -11,6 +11,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Separator } from "./ui/separator";
+import { ThemeToggle } from "./theme-toggle";
 
 interface SettingsSheetProps {
   isOpen: boolean;
@@ -74,6 +75,17 @@ export function SettingsSheet({
             Verwalte hier deine Anwendungseinstellungen.
           </SheetDescription>
         </SheetHeader>
+        <div className="py-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Palette className="h-5 w-5" />
+            <h3 className="text-lg font-semibold">Erscheinungsbild</h3>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Wähle das Farbschema für die Anwendung.
+          </p>
+          <ThemeToggle />
+        </div>
+        <Separator />
         <div className="py-4">
           <div className="flex items-center gap-2 mb-2">
             <Bell className="h-5 w-5" />
