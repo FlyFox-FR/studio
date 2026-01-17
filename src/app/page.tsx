@@ -1,3 +1,5 @@
+import { ContactManager } from '@/components/contact-manager';
+
 export default function Home() {
-  return <></>;
+  return <ContactManager />;
 }
