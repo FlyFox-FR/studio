@@ -75,6 +75,7 @@ export function ContactForm({
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
+  const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -202,7 +203,7 @@ export function ContactForm({
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Birthday</FormLabel>
-                    <Popover>
+                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
@@ -225,7 +226,10 @@ export function ContactForm({
                         <Calendar
                           mode="single"
                           selected={field.value}
-                          onSelect={field.onChange}
+                          onSelect={(date) => {
+                            field.onChange(date);
+                            setIsCalendarOpen(false);
+                          }}
                           disabled={(date) =>
                             date > new Date() || date < new Date("1900-01-01")
                           }

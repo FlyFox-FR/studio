@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Bell, Plus, TestTubeDiagonal, Users } from "lucide-react";
+import { Plus, Settings, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Contact } from "@/lib/types";
 import { initialContacts } from "@/lib/data";
@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ContactForm } from "@/components/contact-form";
 import { ContactList } from "@/components/contact-list";
 import { UpcomingReminders } from "@/components/upcoming-reminders";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { SettingsSheet } from "@/components/settings-sheet";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -30,6 +30,7 @@ export function ContactManager() {
 
   const [notificationPermission, setNotificationPermission] = React.useState<NotificationPermission>("default");
   const [isSubscribed, setIsSubscribed] = React.useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
 
   React.useEffect(() => {
     if ("serviceWorker" in navigator && "PushManager" in window) {
@@ -175,26 +176,6 @@ export function ContactManager() {
     }
   };
 
-  const renderNotificationUI = () => {
-    if (notificationPermission === 'denied') {
-      return <p className="text-sm text-destructive">Notifications are blocked. Please enable them in your browser settings.</p>;
-    }
-
-    if (isSubscribed) {
-      return (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <p className="text-sm font-medium text-green-600">Notifications are enabled!</p>
-          <Button variant="outline" onClick={handleTestNotification}>
-            <TestTubeDiagonal className="mr-2 h-4 w-4" />
-            Send Test Notification
-          </Button>
-        </div>
-      );
-    }
-    
-    return <Button onClick={handleRequestNotificationPermission}>Enable Notifications</Button>;
-  }
-
   return (
     <>
       <header className="sticky top-0 z-10 w-full border-b bg-background/80 backdrop-blur-sm">
@@ -202,31 +183,22 @@ export function ContactManager() {
           <h1 className="font-headline text-xl font-bold text-foreground sm:text-2xl">
             RememberWhen
           </h1>
-          <Button onClick={() => handleOpenForm()}>
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline sm:ml-2">Add Contact</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => handleOpenForm()}>
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline sm:ml-2">Add Contact</span>
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
+              <Settings className="h-5 w-5" />
+              <span className="sr-only">Settings</span>
+            </Button>
+          </div>
         </div>
       </header>
 
       <main className="flex-1">
         <div className="container mx-auto p-4 md:p-6">
           <UpcomingReminders contacts={contacts} />
-
-          <Card className="my-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell />
-                Notification Settings
-              </CardTitle>
-              <CardDescription>
-                Enable push notifications to get birthday reminders, even when the app is closed on Android.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {renderNotificationUI()}
-            </CardContent>
-          </Card>
 
           <div className="mt-8">
             <div className="flex items-center gap-2 mb-4">
@@ -247,6 +219,14 @@ export function ContactManager() {
         onOpenChange={setIsFormOpen}
         onSave={handleSaveContact}
         contact={editingContact}
+      />
+      <SettingsSheet
+        isOpen={isSettingsOpen}
+        onOpenChange={setIsSettingsOpen}
+        notificationPermission={notificationPermission}
+        isSubscribed={isSubscribed}
+        handleRequestNotificationPermission={handleRequestNotificationPermission}
+        handleTestNotification={handleTestNotification}
       />
     </>
   );
