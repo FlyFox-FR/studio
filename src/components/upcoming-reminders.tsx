@@ -6,7 +6,6 @@ import {
   format,
   isToday,
   isTomorrow,
-  parseISO,
   setYear,
 } from "date-fns";
 import { Cake, CalendarClock } from "lucide-react";
@@ -63,6 +62,7 @@ export function UpcomingReminders({ contacts }: { contacts: Contact[] }) {
           <Card key={contact.id} className="transition-all hover:shadow-md">
             <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
               <Avatar>
+                {contact.avatarUrl && <AvatarImage src={contact.avatarUrl} alt={contact.name} className="object-cover" />}
                 <AvatarFallback>{getInitials(contact.name)}</AvatarFallback>
               </Avatar>
               <div className="grid gap-1">

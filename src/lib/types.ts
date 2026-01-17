@@ -12,4 +12,5 @@ export type Contact = {
   name: string;
   birthday: Date;
   reminders: ReminderInterval[];
+  avatarUrl?: string;
 };

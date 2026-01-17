@@ -5,7 +5,7 @@ import type { Contact } from "@/lib/types";
 import { reminderLabels } from "@/lib/types";
 import { getInitials } from "@/lib/utils";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,7 +38,8 @@ export function ContactCard({
     <Card className="flex flex-col justify-between transition-transform duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">
       <CardHeader className="flex flex-row items-start justify-between">
         <div className="flex items-center gap-4">
-          <Avatar>
+          <Avatar className="h-12 w-12">
+            {contact.avatarUrl && <AvatarImage src={contact.avatarUrl} alt={contact.name} className="object-cover" />}
             <AvatarFallback>{getInitials(contact.name)}</AvatarFallback>
           </Avatar>
           <div className="grid gap-1">

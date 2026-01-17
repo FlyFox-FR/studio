@@ -3,14 +3,15 @@
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Trash2, Upload } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { cn } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
 import type { Contact, ReminderInterval } from "@/lib/types";
 import { reminderIntervals, reminderLabels } from "@/lib/types";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -44,6 +45,7 @@ const formSchema = z.object({
     required_error: "A date of birth is required.",
   }),
   reminders: z.array(z.string()).optional(),
+  avatarUrl: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -67,32 +69,58 @@ export function ContactForm({
       name: "",
       birthday: undefined,
       reminders: [],
+      avatarUrl: "",
     },
   });
 
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [imagePreview, setImagePreview] = React.useState<string | null>(null);
+
   React.useEffect(() => {
-    if (contact) {
-      form.reset({
-        name: contact.name,
-        birthday: contact.birthday,
-        reminders: contact.reminders,
-      });
-    } else {
-      form.reset({
-        name: "",
-        birthday: undefined,
-        reminders: [],
-      });
+    if (isOpen) {
+      if (contact) {
+        form.reset({
+          name: contact.name,
+          birthday: contact.birthday,
+          reminders: contact.reminders,
+          avatarUrl: contact.avatarUrl,
+        });
+        setImagePreview(contact.avatarUrl || null);
+      } else {
+        form.reset({
+          name: "",
+          birthday: undefined,
+          reminders: [],
+          avatarUrl: "",
+        });
+        setImagePreview(null);
+      }
     }
   }, [contact, form, isOpen]);
+  
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUrl = reader.result as string;
+        setImagePreview(dataUrl);
+        form.setValue("avatarUrl", dataUrl, { shouldValidate: true });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const handleRemoveImage = () => {
+    setImagePreview(null);
+    form.setValue("avatarUrl", undefined);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const onSubmit = (values: FormValues) => {
-    const newContactData = {
-      name: values.name,
-      birthday: values.birthday,
-      reminders: (values.reminders as ReminderInterval[]) || [],
-    };
-    onSave(newContactData, contact?.id);
+    onSave(values, contact?.id);
   };
 
   return (
@@ -111,6 +139,50 @@ export function ContactForm({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div className="space-y-4 py-4">
+              <FormField
+                control={form.control}
+                name="avatarUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Profile Picture</FormLabel>
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-20 w-20">
+                        <AvatarImage src={field.value ?? undefined} alt="Avatar" className="object-cover" />
+                        <AvatarFallback className="text-3xl">
+                          {getInitials(form.watch("name") || " ")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <Input
+                        ref={fileInputRef}
+                        type="file"
+                        className="hidden"
+                        onChange={handleImageChange}
+                        accept="image/png, image/jpeg, image/gif"
+                      />
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <Upload className="mr-2 h-4 w-4" />
+                          Upload
+                        </Button>
+                        {field.value && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleRemoveImage}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Remove
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="name"
