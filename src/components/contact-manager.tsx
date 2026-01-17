@@ -10,6 +10,13 @@ import { ContactForm } from "@/components/contact-form";
 import { ContactList } from "@/components/contact-list";
 import { UpcomingReminders } from "@/components/upcoming-reminders";
 import { SettingsSheet } from "@/components/settings-sheet";
+import {
+  getAllContacts,
+  saveContact,
+  deleteContact,
+  clearContacts,
+  bulkAddContacts,
+} from "@/lib/db";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -25,10 +32,13 @@ function urlBase64ToUint8Array(base64String: string) {
 export function ContactManager() {
   const [contacts, setContacts] = React.useState<Contact[]>([]);
   const [isFormOpen, setIsFormOpen] = React.useState(false);
-  const [editingContact, setEditingContact] = React.useState<Contact | null>(null);
+  const [editingContact, setEditingContact] = React.useState<Contact | null>(
+    null
+  );
   const { toast } = useToast();
 
-  const [notificationPermission, setNotificationPermission] = React.useState<NotificationPermission>("default");
+  const [notificationPermission, setNotificationPermission] =
+    React.useState<NotificationPermission>("default");
   const [isSubscribed, setIsSubscribed] = React.useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
 
@@ -50,88 +60,95 @@ export function ContactManager() {
         });
     }
   }, []);
-  
+
   const handleRequestNotificationPermission = async () => {
     if (!("Notification" in window)) {
-      toast({ title: "This browser does not support desktop notification", variant: "destructive" });
+      toast({
+        title: "This browser does not support desktop notification",
+        variant: "destructive",
+      });
       return;
     }
-  
+
     const permission = await Notification.requestPermission();
     setNotificationPermission(permission);
-  
+
     if (permission === "granted") {
       subscribeUserToPush();
     } else {
-      toast({ title: "Notification permission denied.", description: "You won't receive birthday reminders.", variant: "destructive" });
+      toast({
+        title: "Notification permission denied.",
+        description: "You won't receive birthday reminders.",
+        variant: "destructive",
+      });
     }
   };
-  
+
   const subscribeUserToPush = async () => {
     const swRegistration = await navigator.serviceWorker.ready;
     try {
-      const applicationServerKey = urlBase64ToUint8Array('BNo_3GfW-w4eJ3eED1pM8jYihS0iV4gP1kMh0iLGpn8F1bV7A1i-8o7GvL4gSfuwaX-oaqN-XwzJz4sXj8XJz5E');
+      const applicationServerKey = urlBase64ToUint8Array(
+        "BNo_3GfW-w4eJ3eED1pM8jYihS0iV4gP1kMh0iLGpn8F1bV7A1i-8o7GvL4gSfuwaX-oaqN-XwzJz4sXj8XJz5E"
+      );
       const subscription = await swRegistration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey,
       });
       console.log("User is subscribed:", subscription);
       setIsSubscribed(true);
-      toast({ title: "Notifications enabled!", description: "You're all set to receive reminders." });
+      toast({
+        title: "Notifications enabled!",
+        description: "You're all set to receive reminders.",
+      });
       // In a real app, you would send the subscription to your backend server.
     } catch (error) {
       console.error("Failed to subscribe the user: ", error);
-      toast({ title: "Couldn't subscribe to notifications.", description: "Please try again.", variant: "destructive" });
+      toast({
+        title: "Couldn't subscribe to notifications.",
+        description: "Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
   const handleTestNotification = () => {
     if (!isSubscribed) {
-      toast({ title: "Not Subscribed", description: "Please enable notifications first.", variant: "destructive" });
+      toast({
+        title: "Not Subscribed",
+        description: "Please enable notifications first.",
+        variant: "destructive",
+      });
       return;
     }
 
     // This is a client-side notification for testing purposes.
     // A real push notification must be triggered from a server.
-    navigator.serviceWorker.ready.then(registration => {
-        registration.showNotification("Test Notification", {
-            body: "This is a test notification from RememberWhen!",
-            icon: "icon.png"
-        })
+    navigator.serviceWorker.ready.then((registration) => {
+      registration.showNotification("Test Notification", {
+        body: "This is a test notification from RememberWhen!",
+        icon: "icon.png",
+      });
     });
 
     toast({
       title: "Test notification sent",
-      description: "You should see a notification shortly. If not, check your browser and OS settings.",
+      description:
+        "You should see a notification shortly. If not, check your browser and OS settings.",
     });
   };
 
   React.useEffect(() => {
-    try {
-      const storedContacts = localStorage.getItem("remember-when-contacts");
-      if (storedContacts) {
-        const parsedContacts: (Omit<Contact, "birthday"> & {
-          birthday: string;
-        })[] = JSON.parse(storedContacts);
-        setContacts(
-          parsedContacts.map((c) => ({ ...c, birthday: new Date(c.birthday) }))
-        );
-      } else {
-        setContacts(initialContacts);
+    const loadContacts = async () => {
+      let dbContacts = await getAllContacts();
+      if (dbContacts.length === 0) {
+        // If DB is empty, populate with initial data and save to DB
+        await Promise.all(initialContacts.map((c) => saveContact(c)));
+        dbContacts = await getAllContacts();
       }
-    } catch (error) {
-      console.error("Failed to load contacts from localStorage", error);
-      setContacts(initialContacts);
-    }
+      setContacts(dbContacts);
+    };
+    loadContacts();
   }, []);
-
-  React.useEffect(() => {
-    try {
-      localStorage.setItem("remember-when-contacts", JSON.stringify(contacts));
-    } catch (error) {
-      console.error("Failed to save contacts to localStorage", error);
-    }
-  }, [contacts]);
 
   const handleOpenForm = (contact: Contact | null = null) => {
     setEditingContact(contact);
@@ -143,36 +160,106 @@ export function ContactManager() {
     setEditingContact(null);
   };
 
-  const handleSaveContact = (contactData: Omit<Contact, "id">, id?: string) => {
+  const handleSaveContact = async (
+    contactData: Omit<Contact, "id">,
+    id?: string
+  ) => {
+    let contactToSave: Contact;
     if (id) {
+      const existingContact = contacts.find((c) => c.id === id)!;
+      contactToSave = { ...existingContact, ...contactData };
       setContacts(
-        contacts.map((c) =>
-          c.id === id ? { ...c, ...contactData, id } : c
-        )
+        contacts.map((c) => (c.id === id ? contactToSave : c))
       );
       toast({
         title: "Contact Updated",
         description: `${contactData.name}'s details have been updated.`,
       });
     } else {
-      setContacts([...contacts, { ...contactData, id: crypto.randomUUID() }]);
+      contactToSave = { ...contactData, id: crypto.randomUUID() };
+      setContacts((prev) => [...prev, contactToSave]);
       toast({
         title: "Contact Added",
         description: `${contactData.name} has been added to your list.`,
       });
     }
+    await saveContact(contactToSave);
     handleCloseForm();
   };
 
-  const handleDeleteContact = (id: string) => {
+  const handleDeleteContact = async (id: string) => {
     const contactToDelete = contacts.find((c) => c.id === id);
-    if(contactToDelete) {
+    if (contactToDelete) {
       setContacts(contacts.filter((c) => c.id !== id));
+      await deleteContact(id);
       toast({
         title: "Contact Deleted",
         description: `${contactToDelete.name} has been removed.`,
         variant: "destructive",
       });
+    }
+  };
+
+  const handleExportData = async () => {
+    try {
+      const contactsToExport = await getAllContacts();
+      const dataStr = JSON.stringify(contactsToExport, null, 2);
+      const dataBlob = new Blob([dataStr], { type: "application/json" });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "remember-when-backup.json";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast({ title: "Data exported successfully!" });
+    } catch (error) {
+      console.error("Failed to export data", error);
+      toast({ title: "Export failed", variant: "destructive" });
+    }
+  };
+
+  const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const text = e.target?.result;
+        if (typeof text !== "string") {
+          throw new Error("File is not readable");
+        }
+        const importedContacts = JSON.parse(text);
+
+        if (!Array.isArray(importedContacts)) {
+          throw new Error("Invalid backup file format");
+        }
+
+        // We need to convert date strings back to Date objects
+        const contactsWithDateObjects: Contact[] = importedContacts.map(
+          (c: any) => ({ ...c, birthday: new Date(c.birthday) })
+        );
+
+        await clearContacts();
+        await bulkAddContacts(contactsWithDateObjects);
+        setContacts(contactsWithDateObjects);
+        toast({ title: "Data imported successfully!" });
+        setIsSettingsOpen(false);
+      } catch (error) {
+        console.error("Failed to import data", error);
+        toast({
+          title: "Import failed",
+          description: "Please check the file format.",
+          variant: "destructive",
+        });
+      }
+    };
+    reader.readAsText(file);
+    // Reset file input
+    if (event.target) {
+        event.target.value = '';
     }
   };
 
@@ -188,7 +275,11 @@ export function ContactManager() {
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline sm:ml-2">Add Contact</span>
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsSettingsOpen(true)}
+            >
               <Settings className="h-5 w-5" />
               <span className="sr-only">Settings</span>
             </Button>
@@ -227,6 +318,8 @@ export function ContactManager() {
         isSubscribed={isSubscribed}
         handleRequestNotificationPermission={handleRequestNotificationPermission}
         handleTestNotification={handleTestNotification}
+        handleExportData={handleExportData}
+        handleImportData={handleImportData}
       />
     </>
   );

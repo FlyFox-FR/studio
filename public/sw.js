@@ -1,11 +1,11 @@
-self.addEventListener('push', function(event) {
-  const data = event.data ? event.data.json() : { title: "RememberWhen", body: "You have a new notification." };
-  const title = data.title;
+self.addEventListener("push", (event) => {
+  const data = event.data?.json() ?? {};
+  const title = data.title || "RememberWhen";
   const options = {
-    body: data.body,
-    // icon: 'icon.png', // You can add an icon here
+    body: data.body || "You have a new reminder.",
+    icon: "icon.png",
+    badge: "icon.png",
   };
-
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
